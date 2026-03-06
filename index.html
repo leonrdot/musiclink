@@ -508,8 +508,16 @@
     document.getElementById("song-album").textContent = album;
 
     const coverWrap = document.getElementById("cover-wrap");
+    coverWrap.innerHTML = "";
     if (thumbnailUrl) {
-      coverWrap.innerHTML = `<img class="song-cover" src="${thumbnailUrl}" alt="Capa do album" onerror="this.parentNode.innerHTML='<div class=song-cover-placeholder>${musicNoteHTML()}</div>'" />`;
+      const img = document.createElement("img");
+      img.className = "song-cover";
+      img.alt = "Capa do album";
+      img.src = thumbnailUrl;
+      img.onerror = () => {
+        coverWrap.innerHTML = `<div class="song-cover-placeholder">${musicNoteHTML()}</div>`;
+      };
+      coverWrap.appendChild(img);
     } else {
       coverWrap.innerHTML = `<div class="song-cover-placeholder">${musicNoteHTML()}</div>`;
     }
