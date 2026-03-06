@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MusicBridge — Compartilhe musicas entre plataformas</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --surface: #18181c;
+      --surface2: #222228;
+      --border: #2e2e38;
+      --accent: #7c3aed;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(124, 58, 237, 0.35);
+      --text: #f0f0f5;
+      --muted: #8888a0;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ---- HEADER ---- */
+    header {
+      width: 100%;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), #4f46e5);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .logo-icon svg { width: 18px; height: 18px; fill: white; }
+
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    header h1 span { color: var(--accent-light); }
+
+    /* ---- HERO ---- */
+    .hero {
+      text-align: center;
+      padding: 64px 24px 48px;
+      max-width: 640px;
+      width: 100%;
+    }
+
+    .hero h2 {
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+    }
+
+    .hero h2 .gradient {
+      background: linear-gradient(90deg, var(--accent-light), #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    /* ---- INPUT BOX ---- */
+    .input-wrapper {
+      width: 100%;
+      max-width: 640px;
+      padding: 0 24px 48px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 8px 8px 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-row:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 0.95rem;
+      min-width: 0;
+    }
+
+    .input-row input::placeholder { color: var(--muted); }
+
+    .btn-search {
+      background: linear-gradient(135deg, var(--accent), #4f46e5);
+      color: white;
+      border: none;
+      border-radius: 9px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn-search:hover { opacity: 0.9; }
+    .btn-search:active { transform: scale(0.97); }
+    .btn-search:disabled { opacity: 0.5; cursor: default; }
+
+    /* ---- STATE MESSAGES ---- */
+    #status {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 12px 24px;
+      display: none;
+    }
+
+    #error-msg {
+      text-align: center;
+      color: #f87171;
+      font-size: 0.9rem;
+      padding: 12px 24px;
+      display: none;
+    }
+
+    /* ---- RESULT CARD ---- */
+    #result {
+      width: 100%;
+      max-width: 640px;
+      padding: 0 24px 64px;
+      display: none;
+    }
+
+    .song-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .song-header {
+      display: flex;
+      gap: 16px;
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+
+    .song-cover {
+      width: 72px; height: 72px;
+      border-radius: 8px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--surface2);
+    }
+
+    .song-cover-placeholder {
+      width: 72px; height: 72px;
+      border-radius: 8px;
+      background: var(--surface2);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .song-cover-placeholder svg { width: 28px; height: 28px; fill: var(--muted); }
+
+    .song-info { min-width: 0; }
+
+    .song-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .song-artist {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .song-album {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-style: italic;
+    }
+
+    .platforms-label {
+      padding: 14px 20px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .platforms-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 0 12px 12px;
+    }
+
+    .platform-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border-radius: 9px;
+      text-decoration: none;
+      color: var(--text);
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+
+    .platform-link:hover { background: var(--surface2); }
+
+    .platform-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .platform-icon svg, .platform-icon img {
+      width: 20px; height: 20px;
+    }
+
+    .platform-name { font-size: 0.93rem; font-weight: 500; flex: 1; }
+
+    .platform-open {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .platform-open svg { width: 14px; height: 14px; fill: var(--muted); }
+
+    /* copy toast */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* ---- FOOTER ---- */
+    footer {
+      margin-top: auto;
+      padding: 20px 24px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      width: 100%;
+    }
+
+    footer a { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18A9 9 0 0 0 12 3zm0 2a7 7 0 1 1 0 14A7 7 0 0 1 12 5zm-1 3v5.586l3.707 3.707-1.414 1.414L9 15.414V8h2z"/></svg>
+    </div>
+    <h1>Music<span>Bridge</span></h1>
+  </header>
+
+  <div class="hero">
+    <h2>Compartilhe musicas em <span class="gradient">qualquer plataforma</span></h2>
+    <p>Cole o link de uma musica do Spotify, Apple Music, YouTube Music, Deezer e mais — receba links para todos os servicos de uma so vez.</p>
+  </div>
+
+  <div class="input-wrapper">
+    <div class="input-row">
+      <input
+        type="url"
+        id="link-input"
+        placeholder="Cole o link da musica aqui..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="btn-search" id="search-btn" onclick="search()">Buscar</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+  <div id="error-msg"></div>
+
+  <div id="result">
+    <div class="song-card">
+      <div class="song-header">
+        <div id="cover-wrap"></div>
+        <div class="song-info">
+          <div class="song-title" id="song-title"></div>
+          <div class="song-artist" id="song-artist"></div>
+          <div class="song-album" id="song-album"></div>
+        </div>
+      </div>
+      <div class="platforms-label">Disponivel em</div>
+      <div class="platforms-list" id="platforms-list"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Link copiado!</div>
+
+  <footer>
+    Links via <a href="https://odesli.co" target="_blank" rel="noopener">Odesli</a> &middot; MusicBridge
+  </footer>
+
+<script>
+  const PLATFORMS = {
+    spotify:       { name: "Spotify",        color: "#1DB954", bg: "#1a3326", icon: spotifyIcon },
+    appleMusic:    { name: "Apple Music",    color: "#fc3c44", bg: "#3a1a1e", icon: appleMusicIcon },
+    youtubeMusic:  { name: "YouTube Music",  color: "#FF0000", bg: "#3a1212", icon: youtubeMusicIcon },
+    youtube:       { name: "YouTube",        color: "#FF0000", bg: "#3a1212", icon: youtubeIcon },
+    deezer:        { name: "Deezer",         color: "#a238ff", bg: "#29133a", icon: deezerIcon },
+    tidal:         { name: "Tidal",          color: "#00FECC", bg: "#0a2e28", icon: tidalIcon },
+    amazonMusic:   { name: "Amazon Music",   color: "#00A8E1", bg: "#0a2535", icon: amazonIcon },
+    soundcloud:    { name: "SoundCloud",     color: "#ff5500", bg: "#3a1a0a", icon: soundcloudIcon },
+    pandora:       { name: "Pandora",        color: "#00A0EE", bg: "#0a2535", icon: pandoraIcon },
+    napster:       { name: "Napster",        color: "#09bcd4", bg: "#0a282e", icon: defaultIcon },
+    yandex:        { name: "Yandex Music",   color: "#FFCC00", bg: "#30280a", icon: defaultIcon },
+    audiomack:     { name: "Audiomack",      color: "#FFA800", bg: "#30220a", icon: defaultIcon },
+    anghami:       { name: "Anghami",        color: "#6B4FBB", bg: "#221535", icon: defaultIcon },
+    boomplay:      { name: "Boomplay",       color: "#e31837", bg: "#3a0f14", icon: defaultIcon },
+  };
+
+  // ICONS (inline SVG)
+  function spotifyIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 17.314a.75.75 0 0 1-1.032.249c-2.825-1.726-6.38-2.116-10.567-1.159a.75.75 0 1 1-.334-1.463c4.583-1.047 8.515-.596 11.684 1.34a.75.75 0 0 1 .249 1.033zm1.482-3.372a.938.938 0 0 1-1.29.308c-3.232-1.987-8.157-2.563-11.977-1.402a.937.937 0 0 1-.56-1.79c4.363-1.363 9.785-.703 13.52 1.593a.937.937 0 0 1 .307 1.29zm.128-3.508C15.26 8.094 9.366 7.9 5.896 8.97a1.124 1.124 0 0 1-.655-2.151c4.012-1.222 10.68-.986 14.892 1.648a1.125 1.125 0 0 1-1.861 1.267z"/></svg>`;
+  }
+
+  function appleMusicIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M23.994 6.124a9.23 9.23 0 0 0-.24-2.19c-.317-1.31-1.062-2.31-2.18-3.043a5.022 5.022 0 0 0-1.877-.726 10.496 10.496 0 0 0-1.564-.15c-.04-.003-.083-.01-.124-.013H5.986c-.152.01-.303.017-.454.026C4.94.17 4.115.393 3.382.893 2.419 1.54 1.836 2.434 1.51 3.527a8.304 8.304 0 0 0-.238 1.94C1.25 5.716 1.248 5.965 1.248 6.21v11.573c0 .265.002.53.021.794.045.707.174 1.4.48 2.058.52 1.11 1.36 1.883 2.51 2.33.64.245 1.308.35 1.987.386.156.01.313.02.47.022H17.49c.263 0 .526-.005.787-.018.787-.038 1.55-.2 2.26-.566 1.07-.548 1.783-1.39 2.14-2.54.18-.574.24-1.166.267-1.76.01-.264.01-.528.01-.793V6.124zm-7.538 3.508v5.632c0 .82-.187 1.573-.704 2.217-.488.615-1.13.968-1.927 1.063a3.582 3.582 0 0 1-.578.025c-1.109-.05-2.033-.87-2.208-1.972-.196-1.234.624-2.412 1.856-2.67.418-.087.842-.09 1.266-.023.177.028.35.077.558.122V7.817c0-.306-.157-.466-.46-.512-.13-.02-.263-.033-.396-.033H9.24c-.356 0-.508.154-.508.512v8.26c0 .52-.003 1.04.007 1.56.023 1.13-.49 1.947-1.462 2.495-.514.29-1.07.405-1.657.384-1.283-.046-2.318-.98-2.45-2.244a2.385 2.385 0 0 1 1.53-2.517c.42-.156.854-.198 1.295-.14.175.024.347.06.553.097V7.326c0-.544.222-.826.75-.98.186-.054.38-.076.572-.076h7.35c.616 0 1.16.17 1.56.656.278.335.378.73.378 1.155.003.517 0 1.034 0 1.55z"/></svg>`;
+  }
+
+  function youtubeMusicIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.104c-3.924 0-7.104-3.18-7.104-7.104S8.076 4.896 12 4.896s7.104 3.18 7.104 7.104-3.18 7.104-7.104 7.104zm0-13.332c-3.432 0-6.228 2.796-6.228 6.228S8.568 18.228 12 18.228s6.228-2.796 6.228-6.228S15.432 5.772 12 5.772zM9.684 15.54V8.46L15.816 12l-6.132 3.54z"/></svg>`;
+  }
+
+  function youtubeIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`;
+  }
+
+  function deezerIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M18.81 4.16v3.03H24V4.16h-5.19zM6.27 8.38v3.027h5.189V8.38H6.27zm6.27 0v3.027h5.19V8.38h-5.19zm6.27 0v3.027H24V8.38h-5.19zM6.27 12.594v3.027h5.189v-3.027H6.27zm6.27 0v3.027h5.19v-3.027h-5.19zm6.27 0v3.027H24v-3.027h-5.19zM0 16.81v3.029h5.19V16.81H0zm6.27 0v3.029h5.189V16.81H6.27zm6.27 0v3.029h5.19V16.81h-5.19zm6.27 0v3.029H24V16.81h-5.19z"/></svg>`;
+  }
+
+  function tidalIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12.012 3.992L8.008 7.996 4.004 3.992 0 7.996l4.004 4.004 4.004-4.004 4.004 4.004 4.004-4.004L19.996 11.994l4.004-4.004-4.004-3.998-4.004 4.004-3.98-4.004zM8.008 12.004l-4.004 4.004L0 12.004l4.004-4.004 4.004 4.004zm8.008 0l-4.004 4.004-4.004-4.004 4.004-4.004 4.004 4.004z"/></svg>`;
+  }
+
+  function amazonIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M13.958 10.09c0 1.232.029 2.256-.591 3.351-.502.891-1.301 1.438-2.186 1.438-1.214 0-1.922-.924-1.922-2.292 0-2.692 2.415-3.182 4.7-3.182v.685zm3.186 7.705c-.209.189-.512.201-.748.074-1.052-.872-1.238-1.276-1.814-2.106-1.734 1.767-2.962 2.297-5.209 2.297-2.66 0-4.731-1.641-4.731-4.925 0-2.565 1.391-4.309 3.37-5.164 1.715-.75 4.113-.883 5.942-1.089v-.406c0-.747.06-1.629-.381-2.276-.385-.579-1.124-.818-1.776-.818-1.206 0-2.277.619-2.54 1.903-.054.285-.261.567-.549.582l-3.076-.333c-.259-.056-.548-.266-.472-.661C6.39 1.517 9.397.5 12.083.5c1.376 0 3.174.366 4.259 1.401 1.376 1.285 1.245 2.999 1.245 4.866v4.405c0 1.324.549 1.906 1.066 2.621.181.254.22.558-.009.747l-2.5 2.254zm3.315 1.544c-2.147 1.608-5.261 2.461-7.937 2.461-3.754 0-7.135-1.389-9.695-3.699-.201-.182-.021-.43.22-.289 2.763 1.607 6.178 2.574 9.712 2.574 2.381 0 5-0.494 7.413-1.516.363-.155.668.238.287.469zm.803-2.034c-.273-.352-1.802-.166-2.489-.084-.209.025-.241-.157-.054-.289 1.219-.857 3.22-.609 3.452-.323.232.287-.061 2.285-1.205 3.238-.175.147-.343.069-.265-.124.257-.641.834-2.066.561-2.418z"/></svg>`;
+  }
+
+  function soundcloudIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M1.175 12.225c-.016 0-.023.006-.028.018l-.201 1.43.201 1.419c.005.012.012.018.028.018s.023-.006.028-.018l.228-1.419-.228-1.43c-.005-.012-.012-.018-.028-.018zm.58-.204c-.021 0-.032.01-.038.026l-.172 1.608.172 1.596c.006.016.017.026.038.026.022 0 .033-.01.038-.026l.196-1.596-.196-1.608c-.005-.016-.016-.026-.038-.026zm.601-.065c-.026 0-.041.016-.044.041l-.148 1.673.148 1.658c.003.026.018.041.044.041.027 0 .041-.016.044-.041l.168-1.658-.168-1.673c-.003-.025-.017-.041-.044-.041zm.626-.04c-.032 0-.05.02-.053.05l-.124 1.713.124 1.695c.003.03.021.05.053.05.031 0 .049-.02.052-.05l.141-1.695-.141-1.713c-.003-.03-.021-.05-.052-.05zm.643-.013c-.038 0-.059.025-.062.061l-.1 1.726.1 1.708c.003.036.024.061.062.061.037 0 .058-.025.061-.061l.114-1.708-.114-1.726c-.003-.036-.024-.061-.061-.061zm.665-.008c-.043 0-.067.029-.07.071l-.077 1.734.077 1.716c.003.042.027.071.07.071.044 0 .068-.029.07-.071l.088-1.716-.088-1.734c-.002-.042-.026-.071-.07-.071zm.665-.005c-.049 0-.077.033-.08.081l-.053 1.739.053 1.72c.003.048.031.081.08.081s.077-.033.079-.081l.061-1.72-.061-1.739c-.002-.048-.03-.081-.079-.081zm.686-.003c-.054 0-.085.036-.088.09l-.029 1.742.029 1.723c.003.054.034.09.088.09.055 0 .085-.036.088-.09l.033-1.723-.033-1.742c-.003-.054-.033-.09-.088-.09zm.688-.002c-.06 0-.094.04-.096.099l-.005 1.744.005 1.725c.002.059.036.099.096.099.06 0 .094-.04.097-.099l.006-1.725-.006-1.744c-.003-.059-.037-.099-.097-.099zM12 8.676c-.399 0-.784.065-1.145.183C10.686 6.174 8.561 4.5 6.045 4.5c-.645 0-1.264.13-1.826.363-.21.085-.267.173-.269.252v13.618c.002.082.064.148.147.159l7.904.001c.081-.012.144-.077.144-.158V9.019c0-.188-.152-.343-.341-.343H12zm10.013 4.282c-.021-.005-.042-.01-.064-.012-.032-.002-.066-.003-.099-.003-1.083 0-1.963.882-1.963 1.969 0 1.088.88 1.97 1.963 1.97l.099-.003c.022-.003.043-.007.064-.012V12.958zM21 11.019c0-.888-.717-1.607-1.601-1.607-.439 0-.836.177-1.127.463-.239-2.357-2.197-4.196-4.591-4.196-.297 0-.587.029-.867.085-.111.022-.14.048-.143.071v12.003c.003.025.021.043.046.044l7.236.001c.585 0 1.059-.476 1.059-1.063V11.019z"/></svg>`;
+  }
+
+  function pandoraIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M0 0v24h8.222c5.217 0 9.547-4.342 9.547-9.547 0-3.526-1.898-6.596-4.733-8.298H24V0H0zm8.333 16.73H4.267V7.27h4.066c2.536 0 4.6 2.115 4.6 4.73s-2.064 4.73-4.6 4.73z"/></svg>`;
+  }
+
+  function defaultIcon(color) {
+    return `<svg viewBox="0 0 24 24" fill="${color}"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm1 14.93V16a1 1 0 0 0-2 0v.93A8.001 8.001 0 0 1 4.07 11H5a1 1 0 0 0 0-2h-.93A8.001 8.001 0 0 1 11 2.07V3a1 1 0 0 0 2 0v-.93A8.001 8.001 0 0 1 19.93 9H19a1 1 0 0 0 0 2h.93A8.001 8.001 0 0 1 13 16.93zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>`;
+  }
+
+  // ---- MAIN LOGIC ----
+
+  const input = document.getElementById("link-input");
+  const searchBtn = document.getElementById("search-btn");
+  const statusEl = document.getElementById("status");
+  const errorEl = document.getElementById("error-msg");
+  const resultEl = document.getElementById("result");
+  const toastEl = document.getElementById("toast");
+
+  input.addEventListener("keydown", e => { if (e.key === "Enter") search(); });
+
+  function setStatus(msg) {
+    statusEl.innerHTML = msg;
+    statusEl.style.display = msg ? "block" : "none";
+    errorEl.style.display = "none";
+  }
+
+  function setError(msg) {
+    errorEl.textContent = msg;
+    errorEl.style.display = msg ? "block" : "none";
+    statusEl.style.display = "none";
+  }
+
+  function showResult() {
+    resultEl.style.display = "block";
+  }
+
+  function hideResult() {
+    resultEl.style.display = "none";
+  }
+
+  async function search() {
+    const url = input.value.trim();
+    if (!url) return;
+
+    hideResult();
+    setError("");
+    setStatus(`<span class="spinner"></span> Buscando links...`);
+    searchBtn.disabled = true;
+
+    try {
+      const apiUrl = `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(url)}&userCountry=BR`;
+      const res = await fetch(apiUrl);
+
+      if (!res.ok) {
+        if (res.status === 400) throw new Error("Link invalido ou nao reconhecido. Tente um link do Spotify, Apple Music, Deezer, etc.");
+        if (res.status === 404) throw new Error("Musica nao encontrada. Verifique o link e tente novamente.");
+        throw new Error(`Erro na busca (${res.status}). Tente novamente em instantes.`);
+      }
+
+      const data = await res.json();
+      renderResult(data);
+      setStatus("");
+    } catch (e) {
+      setError(e.message || "Erro inesperado. Tente novamente.");
+    } finally {
+      searchBtn.disabled = false;
+    }
+  }
+
+  function renderResult(data) {
+    // Pega metadados de qualquer entidade disponivel
+    const entities = Object.values(data.entitiesByUniqueId || {});
+    const entity = entities.find(e => e.title) || entities[0] || {};
+
+    const title = entity.title || "Titulo desconhecido";
+    const artist = entity.artistName || "";
+    const album = entity.albumName || "";
+    const thumbnailUrl = entity.thumbnailUrl || "";
+
+    document.getElementById("song-title").textContent = title;
+    document.getElementById("song-artist").textContent = artist;
+    document.getElementById("song-album").textContent = album;
+
+    const coverWrap = document.getElementById("cover-wrap");
+    if (thumbnailUrl) {
+      coverWrap.innerHTML = `<img class="song-cover" src="${thumbnailUrl}" alt="Capa do album" onerror="this.parentNode.innerHTML='<div class=song-cover-placeholder>${musicNoteHTML()}</div>'" />`;
+    } else {
+      coverWrap.innerHTML = `<div class="song-cover-placeholder">${musicNoteHTML()}</div>`;
+    }
+
+    const list = document.getElementById("platforms-list");
+    list.innerHTML = "";
+
+    const linksByPlatform = data.linksByPlatform || {};
+    const order = ["spotify","appleMusic","youtubeMusic","youtube","deezer","tidal","amazonMusic","soundcloud","pandora","napster","yandex","audiomack","anghami","boomplay"];
+
+    // Ordena: primeiro os conhecidos na ordem definida, depois os desconhecidos
+    const keys = [
+      ...order.filter(k => linksByPlatform[k]),
+      ...Object.keys(linksByPlatform).filter(k => !order.includes(k))
+    ];
+
+    if (keys.length === 0) {
+      list.innerHTML = `<p style="color:var(--muted);padding:12px 12px;font-size:0.88rem;">Nenhuma plataforma encontrada para esta musica.</p>`;
+    }
+
+    for (const key of keys) {
+      const pData = PLATFORMS[key] || { name: key, color: "#888", bg: "#222", icon: defaultIcon };
+      const link = linksByPlatform[key]?.url || "#";
+
+      const item = document.createElement("a");
+      item.href = link;
+      item.target = "_blank";
+      item.rel = "noopener noreferrer";
+      item.className = "platform-link";
+      item.innerHTML = `
+        <div class="platform-icon" style="background:${pData.bg}">
+          ${pData.icon(pData.color)}
+        </div>
+        <span class="platform-name">${pData.name}</span>
+        <span class="platform-open">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42L17.59 5H14V3zM5 5h4V3H3v18h18v-6h-2v4H5V5z"/></svg>
+        </span>
+      `;
+
+      // Long press / right click hint: copy link
+      item.addEventListener("contextmenu", e => {
+        e.preventDefault();
+        navigator.clipboard.writeText(link).then(() => showToast("Link copiado!"));
+      });
+
+      list.appendChild(item);
+    }
+
+    showResult();
+  }
+
+  function musicNoteHTML() {
+    return `<svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>`;
+  }
+
+  let toastTimeout;
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toastEl.classList.remove("show"), 2200);
+  }
+</script>
+</body>
+</html>
